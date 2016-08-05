@@ -119,10 +119,8 @@ class Connection extends EventEmitter {
 
         const buf = new Buffer(JSON.stringify(data));
 
-        const preamble = new Buffer(6);
-        preamble.writeUInt8(254, 0);
-        preamble.writeUInt8(9, 1);
-        preamble.writeUInt32BE(buf.length, 2);
+        const preamble = new Buffer(4);
+        preamble.writeUInt32BE(buf.length, 0);
 
         this._socket.write(preamble);
         this._socket.write(buf);
@@ -134,20 +132,17 @@ class Connection extends EventEmitter {
 
     _processPart(chunk) {
         if (this._msgLenBuf) {
-            const lenBuffer = new Buffer(6);
+            const lenBuffer = new Buffer(4);
             this._msgLenBuf.copy(lenBuffer);
-            chunk.copy(lenBuffer, this._msgLenBuf.length, 0, 6 - this._msgLenBuf.length);
+            chunk.copy(lenBuffer, this._msgLenBuf.length, 0, 4 - this._msgLenBuf.length);
 
-            if (chunk.readUInt8(0) !== 254 || chunk.readUInt8(1) !== 9) {
-                throw new Error('Protocol sync failed');
-            }
-            this._msgLen = lenBuffer.readUInt32BE(2);
+            this._msgLen = lenBuffer.readUInt32BE(0);
             this._msgBufLen = 0;
             this._msgBufs = [];
 
             this._msgLenBuf = null;
 
-            this._processPart(chunk.slice(6 - this._msgLenBuf.length));
+            this._processPart(chunk.slice(4 - this._msgLenBuf.length));
             return;
         }
 
@@ -167,17 +162,13 @@ class Connection extends EventEmitter {
                 const bytesLeftCount = chunk.length - offset;
 
                 if (bytesLeftCount) {
-                    if (bytesLeftCount >= 6) {
-                        if (chunk.readUInt8(offset) !== 254 || chunk.readUInt8(offset + 1) !== 9) {
-                            throw new Error('Protocol sync failed');
-                        }
-
-                        this._msgLen = chunk.readUInt32BE(offset + 2);
+                    if (bytesLeftCount >= 4) {
+                        this._msgLen = chunk.readUInt32BE(offset);
                         this._msgBufs = [];
                         this._msgBufLen = 0;
 
-                        if (bytesLeftCount > 6) {
-                            this._processPart(chunk.slice(offset + 6));
+                        if (bytesLeftCount > 4) {
+                            this._processPart(chunk.slice(offset + 4));
                         }
 
                     } else {
@@ -186,16 +177,11 @@ class Connection extends EventEmitter {
                 }
             }
         } else {
-            if (chunk.readUInt8(0) !== 254 || chunk.readUInt8(1) !== 9) {
-                console.error('Protocol sync failed');
-                throw new Error('Protocol sync failed');
-            }
-
-            this._msgLen = chunk.readUInt32BE(2);
+            this._msgLen = chunk.readUInt32BE(0);
             this._msgBufLen = 0;
             this._msgBufs = [];
 
-            this._processPart(chunk.slice(6));
+            this._processPart(chunk.slice(4));
         }
     }
 
