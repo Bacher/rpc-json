@@ -122,8 +122,7 @@ class Connection extends EventEmitter {
         const preamble = new Buffer(4);
         preamble.writeUInt32BE(buf.length, 0);
 
-        this._socket.write(preamble);
-        this._socket.write(buf);
+        this._socket.write(Buffer.concat([preamble, buf]));
     }
 
     _onSocketData(chunk) {
