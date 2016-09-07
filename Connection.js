@@ -95,15 +95,17 @@ class Connection extends EventEmitter {
 
     request(name, data) {
         return new Promise((resolve, reject) => {
+            this._requestId++;
+
             this._send({
                 type:        'request',
-                requestId:   ++this._requestId,
+                requestId:   this._requestId,
                 requestName: name,
                 data:        data
             });
 
             this._requests.set(this._requestId, { resolve, reject });
-        })
+        });
     }
 
     destroy() {
@@ -188,22 +190,52 @@ class Connection extends EventEmitter {
         const packet = JSON.parse(buffer.toString('utf-8'));
 
         if (packet.type === 'request') {
-            this._requestHandler(packet.requestName, packet.data, response => {
+            this._safeRequestHandler(packet.requestName, packet.data).then(result => {
                 this._send({
-                    type: 'response',
+                    type:        'response',
                     responseFor: packet.requestId,
-                    data: response
+                    data:        result
+                });
+
+            }, err => {
+                let error;
+
+                if (typeof err === 'string') {
+                    error = err;
+                } else {
+                    error = 'UNKNOWN';
+                    console.error('[JSON-Connection]', err);
+                }
+
+                this._send({
+                    type:        'response',
+                    responseFor: packet.requestId,
+                    error:       error
                 });
             });
+
         } else if (packet.type === 'response') {
             const callbacks = this._requests.get(packet.responseFor);
 
             if (callbacks) {
                 this._requests.delete(packet.responseFor);
-                callbacks.resolve(packet.data);
+
+                if (packet.error) {
+                    callbacks.reject(packet.error);
+                } else {
+                    callbacks.resolve(packet.data);
+                }
             }
         } else {
             this.emit('message', packet.data);
+        }
+    }
+
+    _safeRequestHandler(requestName, data) {
+        try {
+            return Promise.resolve(this._requestHandler(requestName, data));
+        } catch(err) {
+            return Promise.reject(err);
         }
     }
 }
