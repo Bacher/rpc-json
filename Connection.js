@@ -108,6 +108,10 @@ class Connection extends EventEmitter {
         });
     }
 
+    close() {
+        this._socket.end();
+    }
+
     destroy() {
         this._socket.destroy();
     }
