@@ -8,13 +8,14 @@ const conn = new Client({
 
 conn.connect();
 
-
 let i = 0;
 
 setInterval(() => {
-    conn.send('hello', { lol: ++i }).then(data => {
-        console.log('RESP', data);
+    const curLol = ++i;
+    console.log(`SEND ${curLol}`);
+    conn.send('hello', { lol: curLol }).then(data => {
+        console.log(`RES FOR ${curLol}`, data);
     }, err => {
-        console.log('ERR', err);
+        console.log(`ERR FOR ${curLol}`, err);
     })
-}, 1000);
+}, 5000);
