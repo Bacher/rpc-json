@@ -83,7 +83,7 @@ module.exports = class Connector extends EventEmitter {
         this._conn.on('error', noop);
 
         this._conn.on('close', () => {
-            this.emit('closed');
+            this.emit('disconnect');
 
             this._conn = null;
 
@@ -92,7 +92,7 @@ module.exports = class Connector extends EventEmitter {
             }
         });
 
-        this.emit('connected');
+        this.emit('connect');
 
         for (let requestInfo of this._queue) {
             clearTimeout(requestInfo.timeoutId);
