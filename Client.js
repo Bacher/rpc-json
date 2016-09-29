@@ -109,7 +109,7 @@ module.exports = class Connector extends EventEmitter {
         }, this._reconnectDelay);
     }
 
-    send(apiName, data) {
+    request(apiName, data) {
         if (this._conn) {
             return this._conn.request(apiName, data);
         } else if (this._queue) {
