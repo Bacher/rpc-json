@@ -33,6 +33,10 @@ class Server extends EventEmitter {
     address() {
         return this._server.address();
     }
+
+    close() {
+        this._server.close();
+    }
 }
 
 function noop() {}
