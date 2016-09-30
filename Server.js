@@ -17,6 +17,10 @@ class Server extends EventEmitter {
                 connection.on('error', noop);
             }
 
+            if (options.requestHandler) {
+                connection.setRequestHandler(options.requestHandler);
+            }
+
             this.emit('connection', connection);
         });
 
