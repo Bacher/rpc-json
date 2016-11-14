@@ -137,7 +137,9 @@ module.exports = class Connector extends EventEmitter {
 function noop() {}
 
 class ClientError extends Error {
-    constructor() {
+    constructor(text) {
+        super(text);
+
         Error.captureStackTrace(this, this.constructor);
     }
 }
