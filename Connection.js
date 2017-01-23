@@ -245,19 +245,39 @@ class Connection extends EventEmitter {
     }
 
     _safeRequestHandler(requestName, data) {
+        if (!this._requestHandler) {
+            const err = new Connection.NoRequestHandlerError();
+            this.emit('error', err);
+            return Promise.reject(err);
+        }
+
         try {
             return Promise.resolve(this._requestHandler(requestName, data));
         } catch(err) {
+            this.emit('error', err);
             return Promise.reject(err);
         }
     }
 }
 
-Connection.SocketCloseError = class SocketCloseError extends Error {
-    constructor() {
-        super('SocketCloseError');
+Connection.ConnectionError = class ConnectionError extends Error {
+    constructor(msg) {
+        super(msg);
         Error.captureStackTrace(this, this.constructor);
     }
 };
+
+Connection.SocketCloseError = class SocketCloseError extends Error {
+    constructor() {
+        super('Socket closed');
+    }
+};
+
+Connection.NoRequestHandlerError = class NoRequestHandlerError extends Error {
+    constructor(err) {
+        super('No request handler');
+    }
+};
+
 
 module.exports = Connection;

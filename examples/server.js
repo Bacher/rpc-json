@@ -1,7 +1,7 @@
 const Server = require('../Server');
 
 const server = new Server({
-    suppressSocketErrors: true
+    //suppressSocketErrors: true
 });
 
 server.on('connection', connection => {
@@ -10,6 +10,8 @@ server.on('connection', connection => {
     });
 
     connection.setRequestHandler((apiName, data) => {
+        throw new Error('SOME ERROR');
+
         console.log(`COME ${data.lol}`);
 
         return new Promise(resolve => {
@@ -19,7 +21,7 @@ server.on('connection', connection => {
                     st:        'OK',
                     lolReturn: data.lol
                 });
-            }, 30000);
+            }, 5000);
         })
     });
 });
