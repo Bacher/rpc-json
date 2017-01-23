@@ -1,0 +1,24 @@
+{
+  "name": "json-protocol",
+  "version": "0.2.0",
+  "description": "JSON RPC",
+  "main": "Connection.js",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "cd test && node steam_parser_test.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.playflock.com/server/json-protocol.git"
+  },
+  "keywords": [
+    "rpc",
+    "json"
+  ],
+  "author": "Ilya 'Bacher' Lebedev <bacherko@gmail.com>",
+  "license": "ISC"
+}
