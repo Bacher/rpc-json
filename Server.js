@@ -18,6 +18,7 @@ class Server extends EventEmitter {
             const connection = new Connection(socket);
 
             if (options.suppressSocketErrors) {
+                console.warn('[@deprecated] Option suppressSocketErrors is deprecated.');
                 connection.on('error', noop);
             } else if (options.redirectErrors) {
                 connection.on('error', err => this.emit('error', err));
