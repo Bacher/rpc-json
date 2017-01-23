@@ -9,6 +9,7 @@ class Client extends EventEmitter {
      * @param {function}  options.requestHandler
      * @param {string}   [options.host='localhost']
      * @param {boolean}  [options.useQueue=false]
+     * @param {number}   [options.timeout=10000] ms
      * @param {number}   [options.queueTimeout=5000] ms
      * @param {boolean}  [options.autoReconnect=false]
      * @param {number}   [options.reconnectDelay=500] ms
@@ -21,6 +22,8 @@ class Client extends EventEmitter {
 
         this._host = options.host || 'localhost';
         this._port = options.port;
+
+        this._timeout = options.timeout || 10000;
 
         this._reconnectTimeoutId = null;
 
@@ -78,6 +81,10 @@ class Client extends EventEmitter {
     _setConnection(connection) {
         this._conn = connection;
 
+        if (this._timeout) {
+            this._conn.setTimeout(this._timeout);
+        }
+
         this._conn.setRequestHandler(this._requestHandler);
 
         this._conn.on('error', noop);
@@ -133,7 +140,7 @@ class Client extends EventEmitter {
                     reject:    reject,
                     timeoutId: setTimeout(() => {
                         this._queue.shift();
-                        reject(new Client.TimeoutError());
+                        reject(new Client.QueueTimeout());
                     }, this._queueTimeout)
                 };
 
@@ -150,9 +157,9 @@ function noop() {}
 
 const ClientError = Client.ClientError = class ClientError extends Connection.BaseError {};
 
-Client.TimeoutError = class TimeoutError extends ClientError {
+Client.QueueTimeout = class QueueTimeout extends ClientError {
     constructor() {
-        super('Timeout reached');
+        super('Queue timeout reached');
     }
 };
 

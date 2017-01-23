@@ -30,6 +30,7 @@ class Connection extends EventEmitter {
 
         this._packetId  = 0;
         this._requestId = 0;
+        this._timeout   = 10000;
 
         this._ended = false;
 
@@ -40,6 +41,13 @@ class Connection extends EventEmitter {
         this._requests = new Map();
 
         this._bindEvents(this._socket);
+    }
+
+    /**
+     * @param {number} timeout - ms
+     */
+    setTimeout(timeout) {
+        this._timeout = timeout;
     }
 
     _bindEvents() {
@@ -103,7 +111,11 @@ class Connection extends EventEmitter {
                 data:        data
             });
 
-            this._requests.set(this._requestId, { resolve, reject });
+            const timeoutId = setTimeout(() => {
+                reject(new Connection.Timeout());
+            }, this._timeout);
+
+            this._requests.set(this._requestId, { resolve, reject, timeoutId });
         });
     }
 
@@ -226,15 +238,17 @@ class Connection extends EventEmitter {
             });
 
         } else if (packet.type === 'response') {
-            const callbacks = this._requests.get(packet.responseFor);
+            const requestData = this._requests.get(packet.responseFor);
 
-            if (callbacks) {
+            if (requestData) {
                 this._requests.delete(packet.responseFor);
 
+                clearTimeout(requestData.timeoutId);
+
                 if (packet.error) {
-                    callbacks.reject(packet.error);
+                    requestData.reject(packet.error);
                 } else {
-                    callbacks.resolve(packet.data);
+                    requestData.resolve(packet.data);
                 }
             }
         } else {
@@ -274,6 +288,12 @@ Connection.SocketClosedError = class SocketClosedError extends BaseError {
 Connection.NoRequestHandlerError = class NoRequestHandlerError extends BaseError {
     constructor() {
         super('No request handler');
+    }
+};
+
+Connection.Timeout = class Timeout extends BaseError {
+    constructor() {
+        super('Response waiting timeout');
     }
 };
 
