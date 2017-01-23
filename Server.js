@@ -41,6 +41,7 @@ class Server extends EventEmitter {
     close() {
         this._server.close();
     }
+
 }
 
 function noop() {}

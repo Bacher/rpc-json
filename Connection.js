@@ -28,14 +28,14 @@ class Connection extends EventEmitter {
 
         this._socket = socket;
 
-        this._packetId = 0;
+        this._packetId  = 0;
         this._requestId = 0;
 
         this._ended = false;
 
-        this._msgLen = 0;
+        this._msgLen    = 0;
         this._msgBufLen = 0;
-        this._msgBufs = null;
+        this._msgBufs   = null;
 
         this._requests = new Map();
 
@@ -195,11 +195,13 @@ class Connection extends EventEmitter {
 
         if (packet.type === 'request') {
             this._safeRequestHandler(packet.requestName, packet.data).then(result => {
-                this._send({
-                    type:        'response',
-                    responseFor: packet.requestId,
-                    data:        result
-                });
+                if (!this._ended) {
+                    this._send({
+                        type:        'response',
+                        responseFor: packet.requestId,
+                        data:        result
+                    });
+                }
 
             }, err => {
                 let error;
@@ -245,13 +247,10 @@ class Connection extends EventEmitter {
 }
 
 Connection.SocketCloseError = class SocketCloseError extends Error {
-
     constructor() {
         super('SocketCloseError');
-
         Error.captureStackTrace(this, this.constructor);
     }
-
 };
 
 module.exports = Connection;

@@ -1,7 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
 const Connection   = require('./Connection');
 
-module.exports = class Connector extends EventEmitter {
+module.exports = class Client extends EventEmitter {
 
     /**
      * @param {Object}    options
@@ -92,6 +92,10 @@ module.exports = class Connector extends EventEmitter {
             }
         });
 
+        this._conn.on('message', data => {
+            this.emit('message', data);
+        });
+
         this.emit('connect');
 
         for (let requestInfo of this._queue) {
@@ -107,6 +111,14 @@ module.exports = class Connector extends EventEmitter {
             this._reconnectTimeoutId = null;
             this._connect();
         }, this._reconnectDelay);
+    }
+
+    send(data) {
+        if (!this._conn) {
+            throw new Connection.SocketCloseError();
+        }
+
+        return this._conn.send(data);
     }
 
     request(apiName, data) {
@@ -137,9 +149,8 @@ module.exports = class Connector extends EventEmitter {
 function noop() {}
 
 class ClientError extends Error {
-    constructor(text) {
-        super(text);
-
+    constructor(msg) {
+        super(msg);
         Error.captureStackTrace(this, this.constructor);
     }
 }
@@ -158,7 +169,7 @@ class TimeoutError extends ClientError {
 
 class ClosingError extends ClientError {
     constructor() {
-        super('Connector closing');
+        super('Client are closing');
     }
 }
 

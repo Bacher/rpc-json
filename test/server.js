@@ -5,16 +5,21 @@ const server = new Server({
 });
 
 server.on('connection', connection => {
+    connection.on('message', data => {
+        console.log('new message:', data);
+    });
+
     connection.setRequestHandler((apiName, data) => {
         console.log(`COME ${data.lol}`);
+
         return new Promise(resolve => {
             setTimeout(() => {
                 console.log(`RESP ${data.lol}`);
                 resolve({
-                    st: 'OK',
+                    st:        'OK',
                     lolReturn: data.lol
                 });
-            }, 4000);
+            }, 30000);
         })
     });
 });
@@ -30,7 +35,6 @@ server.listen({
 
     console.log('Listen 10101');
 });
-
 
 server.on('error', err => {
     console.log('server error:', err)
