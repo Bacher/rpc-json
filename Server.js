@@ -5,16 +5,21 @@ const Connection = require('./Connection');
 
 class Server extends EventEmitter {
 
+    /**
+     * @param {Object} [options]
+     * @param {boolean}  [options.redirectErrors=false] - redirect all errors to server
+     * @param {boolean}  [options.suppressSocketErrors=false] - deprecated! suppress all errors
+     */
     constructor(options) {
         super();
-
-        this._suppressSocketErrors = Boolean(options.suppressSocketErrors);
 
         this._server = net.createServer(socket => {
             const connection = new Connection(socket);
 
-            if (this._suppressSocketErrors) {
+            if (options.suppressSocketErrors) {
                 connection.on('error', noop);
+            } else if (options.redirectErrors) {
+                connection.on('error', err => this.emit('error', err));
             }
 
             if (options.requestHandler) {

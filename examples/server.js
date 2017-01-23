@@ -1,6 +1,7 @@
 const Server = require('../Server');
 
 const server = new Server({
+    redirectErrors: true,
     //suppressSocketErrors: true
 });
 

@@ -43,11 +43,10 @@ class Connection extends EventEmitter {
     }
 
     _bindEvents() {
-        this._socket
-            .on('error', err      => this._onError(err))
-            .on('end',   ()       => this._onEnd())
-            .on('close', hadError => this._onClose(hadError))
-            .on('data',  data     => this._processPart(data));
+        this._socket.on('error', err      => this._onError(err));
+        this._socket.on('end',   ()       => this._onEnd());
+        this._socket.on('close', hadError => this._onClose(hadError));
+        this._socket.on('data',  data     => this._processPart(data));
     }
 
     _onEnd() {
@@ -217,7 +216,6 @@ class Connection extends EventEmitter {
                     error = err;
                 } else {
                     error = 'UNKNOWN';
-                    console.error('[JSON-Connection]', err);
                 }
 
                 this._send({
