@@ -2,19 +2,7 @@ const Server = require('../Server');
 
 const server = new Server({
     redirectErrors: true,
-    //suppressSocketErrors: true
-});
-
-server.on('connection', connection => {
-    connection.on('message', data => {
-        console.log('new message:', data);
-    });
-
-    connection.setRequestHandler((apiName, data) => {
-        throw new Error('SOME ERROR');
-
-        console.log(`COME ${data.lol}`);
-
+    requestHandler(apiName, data) {
         return new Promise(resolve => {
             setTimeout(() => {
                 console.log(`RESP ${data.lol}`);
@@ -24,7 +12,7 @@ server.on('connection', connection => {
                 });
             }, 5000);
         });
-    });
+    }
 });
 
 server.listen({

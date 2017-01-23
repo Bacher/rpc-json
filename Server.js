@@ -7,6 +7,7 @@ class Server extends EventEmitter {
 
     /**
      * @param {Object} [options]
+     * @param {Function} [options.requestHandler] - callback for handle requests
      * @param {boolean}  [options.redirectErrors=false] - redirect all errors to server
      * @param {boolean}  [options.suppressSocketErrors=false] - deprecated! suppress all errors
      */
