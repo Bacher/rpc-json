@@ -1,7 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
 const Connection   = require('./Connection');
 
-module.exports = class Client extends EventEmitter {
+class Client extends EventEmitter {
 
     /**
      * @param {Object}    options
@@ -34,7 +34,7 @@ module.exports = class Client extends EventEmitter {
 
     connect() {
         if (!this._closed) {
-            throw new AlreadyConnectedError();
+            throw new Client.AlreadyConnectedError();
         }
 
         this._closed = false;
@@ -70,7 +70,7 @@ module.exports = class Client extends EventEmitter {
 
             for (let requestInfo of this._queue) {
                 clearTimeout(requestInfo.timeoutId);
-                requestInfo.reject(new ClosingError());
+                requestInfo.reject(new Client.ClosingError());
             }
         }
     }
@@ -115,7 +115,7 @@ module.exports = class Client extends EventEmitter {
 
     send(data) {
         if (!this._conn) {
-            throw new Connection.SocketCloseError();
+            throw new Connection.SocketClosedError();
         }
 
         return this._conn.send(data);
@@ -133,48 +133,39 @@ module.exports = class Client extends EventEmitter {
                     reject:    reject,
                     timeoutId: setTimeout(() => {
                         this._queue.shift();
-                        reject(new TimeoutError());
+                        reject(new Client.TimeoutError());
                     }, this._queueTimeout)
                 };
 
                 this._queue.push(requestData);
             });
         } else {
-            return Promise.reject(new ConnectionError());
+            return Promise.reject(new Connection.SocketClosedError());
         }
     }
 
-};
+}
 
 function noop() {}
 
-class ClientError extends Error {
-    constructor(msg) {
-        super(msg);
-        Error.captureStackTrace(this, this.constructor);
-    }
-}
+const ClientError = Client.ClientError = class ClientError extends Connection.BaseError {};
 
-class ConnectionError extends ClientError {
-    constructor() {
-        super('Connection error');
-    }
-}
-
-class TimeoutError extends ClientError {
+Client.TimeoutError = class TimeoutError extends ClientError {
     constructor() {
         super('Timeout reached');
     }
-}
+};
 
-class ClosingError extends ClientError {
+Client.ClosingError = class ClosingError extends ClientError {
     constructor() {
         super('Client are closing');
     }
-}
+};
 
-class AlreadyConnectedError extends ClientError {
+Client.AlreadyConnectedError = class AlreadyConnectedError extends ClientError {
     constructor() {
         super('Already connected');
     }
-}
+};
+
+module.exports = Client;

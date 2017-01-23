@@ -3,7 +3,7 @@ const Client = require('../Client');
 const client = new Client({
     port:          10101,
     autoReconnect: true,
-    useQueue:      true
+    useQueue:      true,
 });
 
 client.connect();

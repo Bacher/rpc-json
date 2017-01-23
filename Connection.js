@@ -71,7 +71,7 @@ class Connection extends EventEmitter {
     }
 
     _failCurrentRequests() {
-        const error = new Connection.SocketCloseError();
+        const error = new Connection.SocketClosedError();
 
         for (let callbacks of this._requests.values()) {
             callbacks.reject(error);
@@ -117,7 +117,7 @@ class Connection extends EventEmitter {
 
     _send(data) {
         if (this._ended) {
-            throw new Connection.SocketCloseError();
+            throw new Connection.SocketClosedError();
         }
 
         data.packetId = ++this._packetId;
@@ -258,24 +258,23 @@ class Connection extends EventEmitter {
     }
 }
 
-Connection.ConnectionError = class ConnectionError extends Error {
+const BaseError = Connection.BaseError = class BaseError extends Error {
     constructor(msg) {
         super(msg);
         Error.captureStackTrace(this, this.constructor);
     }
 };
 
-Connection.SocketCloseError = class SocketCloseError extends Error {
+Connection.SocketClosedError = class SocketClosedError extends BaseError {
     constructor() {
         super('Socket closed');
     }
 };
 
-Connection.NoRequestHandlerError = class NoRequestHandlerError extends Error {
-    constructor(err) {
+Connection.NoRequestHandlerError = class NoRequestHandlerError extends BaseError {
+    constructor() {
         super('No request handler');
     }
 };
-
 
 module.exports = Connection;
