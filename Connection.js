@@ -44,10 +44,10 @@ class Connection extends EventEmitter {
 
     _bindEvents() {
         this._socket
-            .on('error', this._onError.bind(this))
-            .on('end',   this._onEnd.bind(this))
-            .on('close', this._onClose.bind(this))
-            .on('data',  this._onSocketData.bind(this));
+            .on('error', err      => this._onError(err))
+            .on('end',   ()       => this._onEnd())
+            .on('close', hadError => this._onClose(hadError))
+            .on('data',  data     => this._processPart(data));
     }
 
     _onEnd() {
@@ -131,62 +131,69 @@ class Connection extends EventEmitter {
         this._socket.write(Buffer.concat([preamble, buf]));
     }
 
-    _onSocketData(chunk) {
-        this._processPart(chunk);
-    }
-
     _processPart(chunk) {
-        if (this._msgLenBuf) {
-            const lenBuffer = new Buffer(4);
-            this._msgLenBuf.copy(lenBuffer);
-            chunk.copy(lenBuffer, this._msgLenBuf.length, 0, 4 - this._msgLenBuf.length);
+        while (true) {
+            if (this._msgLenBufs) {
+                this._msgLenBufs.push(chunk);
 
-            this._msgLen = lenBuffer.readUInt32BE(0);
-            this._msgBufLen = 0;
-            this._msgBufs = [];
+                if (this._msgLenBufLen + chunk.length < 4) {
+                    this._msgLenBufLen += chunk.length;
+                    break;
 
-            this._msgLenBuf = null;
+                } else {
+                    const lenBuffer = Buffer.concat(this._msgLenBufs, 4);
 
-            this._processPart(chunk.slice(4 - this._msgLenBuf.length));
-            return;
-        }
+                    this._msgLen    = lenBuffer.readUInt32BE(0);
+                    this._msgBufLen = 0;
+                    this._msgBufs   = [];
 
-        if (this._msgBufs) {
-            this._msgBufs.push(chunk);
+                    this._msgLenBufs = null;
 
-            if (this._msgLen > this._msgBufLen + chunk.length) {
-                this._msgBufLen += chunk.length;
+                    const offset = 4 - this._msgLenBufLen;
 
-            } else {
-                this._onMessage(Buffer.concat(this._msgBufs, this._msgLen));
-
-                this._msgBufs = null;
-
-                const offset = this._msgLen - this._msgBufLen;
-
-                const bytesLeftCount = chunk.length - offset;
-
-                if (bytesLeftCount) {
-                    if (bytesLeftCount >= 4) {
-                        this._msgLen = chunk.readUInt32BE(offset);
-                        this._msgBufs = [];
-                        this._msgBufLen = 0;
-
-                        if (bytesLeftCount > 4) {
-                            this._processPart(chunk.slice(offset + 4));
-                        }
-
+                    if (offset < chunk.length) {
+                        chunk = chunk.slice(offset);
                     } else {
-                        this._msgLenBuf = chunk.slice(offset);
+                        break;
                     }
                 }
-            }
-        } else {
-            this._msgLen = chunk.readUInt32BE(0);
-            this._msgBufLen = 0;
-            this._msgBufs = [];
 
-            this._processPart(chunk.slice(4));
+            } else if (this._msgBufs) {
+                this._msgBufs.push(chunk);
+
+                if (this._msgLen > this._msgBufLen + chunk.length) {
+                    this._msgBufLen += chunk.length;
+                    break;
+
+                } else {
+                    this._onMessage(Buffer.concat(this._msgBufs, this._msgLen));
+
+                    this._msgBufs = null;
+
+                    const offset = this._msgLen - this._msgBufLen;
+
+                    if (chunk.length > offset) {
+                        chunk = chunk.slice(offset);
+                    } else {
+                        break;
+                    }
+                }
+            } else if (chunk.length < 4) {
+                this._msgLenBufs   = [chunk];
+                this._msgLenBufLen = chunk.length;
+                break;
+
+            } else {
+                this._msgLen    = chunk.readUInt32BE(0);
+                this._msgBufLen = 0;
+                this._msgBufs   = [];
+
+                if (chunk.length > 4) {
+                    chunk = chunk.slice(4);
+                } else {
+                    break;
+                }
+            }
         }
     }
 
