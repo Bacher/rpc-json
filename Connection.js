@@ -82,6 +82,10 @@ class Connection extends EventEmitter {
         const error = new Connection.SocketClosedError();
 
         for (let callbacks of this._requests.values()) {
+            if (callbacks.timeoutId) {
+                clearTimeout(callbacks.timeoutId);
+            }
+
             callbacks.reject(error);
         }
 
@@ -100,7 +104,14 @@ class Connection extends EventEmitter {
         });
     }
 
-    request(name, data) {
+    /**
+     * @param {string}  name
+     * @param {*}      [data]
+     * @param {Object} [options]
+     * @param {number}   [options.timeout]
+     * @returns {Promise}
+     */
+    request(name, data, options) {
         return new Promise((resolve, reject) => {
             this._requestId++;
 
@@ -111,9 +122,20 @@ class Connection extends EventEmitter {
                 data:        data
             });
 
-            const timeoutId = setTimeout(() => {
-                reject(new Connection.Timeout());
-            }, this._timeout);
+            let timeoutMs;
+            let timeoutId;
+
+            if (options && options.timeout != null && typeof options.timeout === 'number') {
+                timeoutMs = options.timeout;
+            } else {
+                timeoutMs = this._timeout;
+            }
+
+            if (timeoutMs) {
+                timeoutId = setTimeout(() => {
+                    reject(new Connection.Timeout());
+                }, timeoutMs);
+            }
 
             this._requests.set(this._requestId, { resolve, reject, timeoutId });
         });
@@ -243,7 +265,9 @@ class Connection extends EventEmitter {
             if (requestData) {
                 this._requests.delete(packet.responseFor);
 
-                clearTimeout(requestData.timeoutId);
+                if (requestData.timeoutId) {
+                    clearTimeout(requestData.timeoutId);
+                }
 
                 if (packet.error) {
                     requestData.reject(packet.error);
@@ -273,8 +297,8 @@ class Connection extends EventEmitter {
 }
 
 const BaseError = Connection.BaseError = class BaseError extends Error {
-    constructor(msg) {
-        super(msg);
+    constructor(message) {
+        super(message);
         Error.captureStackTrace(this, this.constructor);
     }
 };
