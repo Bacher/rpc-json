@@ -30,7 +30,7 @@ class Client extends EventEmitter {
         this._queue          = options.useQueue ? [] : null;
         this._queueTimeout   = options.queueTimeout || 5000;
         this._autoReconnect  = Boolean(options.autoReconnect);
-        this._reconnectDelay = options.reconnectDelay;
+        this._reconnectDelay = options.reconnectDelay || 500;
 
         this._requestHandler = options.requestHandler;
     }
@@ -71,9 +71,11 @@ class Client extends EventEmitter {
         if (this._reconnectTimeoutId) {
             clearTimeout(this._reconnectTimeoutId);
 
-            for (let requestInfo of this._queue) {
-                clearTimeout(requestInfo.timeoutId);
-                requestInfo.reject(new Client.ClosingError());
+            if (this._queue) {
+                for (let requestInfo of this._queue) {
+                    clearTimeout(requestInfo.timeoutId);
+                    requestInfo.reject(new Client.ClosingError());
+                }
             }
         }
     }
@@ -105,12 +107,14 @@ class Client extends EventEmitter {
 
         this.emit('connect');
 
-        for (let requestInfo of this._queue) {
-            clearTimeout(requestInfo.timeoutId);
-            requestInfo.resolve(this._conn.request(requestInfo.apiName, requestInfo.data));
-        }
+        if (this._queue) {
+            for (let requestInfo of this._queue) {
+                clearTimeout(requestInfo.timeoutId);
+                requestInfo.resolve(this._conn.request(requestInfo.apiName, requestInfo.data));
+            }
 
-        this._queue = [];
+            this._queue = [];
+        }
     }
 
     _reconnect() {
