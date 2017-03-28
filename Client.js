@@ -105,8 +105,6 @@ class Client extends EventEmitter {
             this.emit('message', data);
         });
 
-        this.emit('connect');
-
         if (this._queue) {
             for (let requestInfo of this._queue) {
                 clearTimeout(requestInfo.timeoutId);
@@ -115,6 +113,8 @@ class Client extends EventEmitter {
 
             this._queue = [];
         }
+
+        this.emit('connect');
     }
 
     _reconnect() {
@@ -135,6 +135,7 @@ class Client extends EventEmitter {
     request(apiName, data) {
         if (this._conn) {
             return this._conn.request(apiName, data);
+
         } else if (this._queue) {
             return new Promise((resolve, reject) => {
                 const requestData = {
@@ -143,13 +144,21 @@ class Client extends EventEmitter {
                     resolve:   resolve,
                     reject:    reject,
                     timeoutId: setTimeout(() => {
-                        this._queue.shift();
+                        const index = this._queue.indexOf(requestData);
+
+                        if (index === -1) {
+                            console.warn('@warning: request in queue not found.');
+                        }
+
+                        this._queue.splice(index, 1);
+
                         reject(new Client.QueueTimeout());
-                    }, this._queueTimeout)
+                    }, this._queueTimeout),
                 };
 
                 this._queue.push(requestData);
             });
+
         } else {
             return Promise.reject(new Connection.SocketClosedError());
         }

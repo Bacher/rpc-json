@@ -1,8 +1,8 @@
 {
-  "name": "json-protocol",
-  "version": "0.2.1",
+  "name": "rpc-json",
+  "version": "0.2.2",
   "description": "JSON RPC",
-  "main": "Connection.js",
+  "main": "index.js",
   "directories": {
     "example": "examples",
     "test": "test"
