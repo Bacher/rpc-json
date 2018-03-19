@@ -1,5 +1,5 @@
 {
-  "name": "rpc-json",
+  "name": "rpc-easy",
   "version": "0.2.3",
   "description": "JSON RPC",
   "main": "index.js",
