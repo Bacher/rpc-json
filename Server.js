@@ -11,7 +11,7 @@ class Server extends EventEmitter {
      * @param {boolean}  [options.redirectErrors=false] - redirect all errors to server
      * @param {boolean}  [options.suppressSocketErrors=false] - deprecated! suppress all errors
      */
-    constructor(options) {
+    constructor(options = {}) {
         super();
 
         this._server = net.createServer(socket => {
