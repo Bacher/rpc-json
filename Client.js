@@ -148,9 +148,9 @@ class Client extends EventEmitter {
 
                         if (index === -1) {
                             console.warn('@warning: request in queue not found.');
+                        } else {
+                            this._queue.splice(index, 1);
                         }
-
-                        this._queue.splice(index, 1);
 
                         reject(new Client.QueueTimeout());
                     }, this._queueTimeout),
