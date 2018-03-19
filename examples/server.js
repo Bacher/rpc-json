@@ -2,7 +2,6 @@ const Server = require('../Server');
 
 const server = new Server({
     redirectErrors: true,
-    //suppressSocketErrors: true
 });
 
 server.on('connection', connection => {
@@ -11,8 +10,6 @@ server.on('connection', connection => {
     });
 
     connection.setRequestHandler((apiName, data) => {
-        throw new Error('SOME ERROR');
-
         console.log(`COME ${data.lol}`);
 
         return new Promise(resolve => {

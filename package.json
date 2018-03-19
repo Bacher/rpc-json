@@ -1,6 +1,6 @@
 {
   "name": "rpc-easy",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "JSON RPC",
   "main": "index.js",
   "directories": {
